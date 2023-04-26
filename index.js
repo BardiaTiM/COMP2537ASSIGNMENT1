@@ -7,6 +7,7 @@ const bcrypt = require('bcrypt');
 const Joi = require('joi');
 const app = express();
 const expireTime = 3600000; // 1 hour
+const images = ["bron1.gif", "bron2.gif", "bron3.gif"];
 
 const port = process.env.PORT || 3030;
 
@@ -38,6 +39,7 @@ app.use(session({
     resave: true
 }));
 
+//nosql injection
 app.get('/nosql-injection', async (req,res) => {
 	var email = req.query.email;
 
@@ -76,7 +78,7 @@ app.get('/', (req, res) => {
       var html = `
         Hello, ${name}! <br\>
         <button onclick="window.location.href='/members'">Go to Members Area</button><br>
-        <button onclick="window.location.href='/logout2'">Logout</button>
+        <button onclick="window.location.href='/logout'">Logout</button>
       `;
       res.send(html);
     } else {
@@ -193,7 +195,7 @@ app.post('/loggingin', async (req,res) => {
 		console.log("correct password");
 		req.session.authenticated = true;
 		req.session.email = email;
-        req.session.name = result[0].name;
+    req.session.name = result[0].name;
 		req.session.cookie.maxAge = expireTime;
 
 		res.redirect('/members');
@@ -212,7 +214,8 @@ app.get('/members', (req, res) => {
     // Get the user's name and profile picture from the session
     const name = req.session.name;
     const email = req.session.email;
-    const pictureUrl = req.session.pictureUrl;
+    const randomImage = images[Math.floor(Math.random() * images.length)];
+    const pictureUrl = randomImage;
 
     // Check if the user is logged in
     if (!email) {
@@ -221,59 +224,28 @@ app.get('/members', (req, res) => {
     } else {
       // Render the members page with the user's name and profile picture
       const html = `
-        <h1>Hello, ${name}!</h1>
-        <img src="${pictureUrl}" alt="Profile Picture">
-        <br><br>
+        <h1>Hello, ${name}.</h1>
+        <img src="${pictureUrl}">
         <form action="/logout" method="post">
-          <button type="submit">Sign Out</button>
+        <button type="submit">Sign Out</button>
         </form>
       `;
       res.send(html);
     }
   });
 
-  app.post('/logout', (req, res) => {
-    // Destroy the session
-    req.session.destroy((err) => {
-      if (err) {
-        console.log(err);
-      } else {
-        // Redirect to the login page after successfully logging out
-        res.redirect('/login');
-      }
-    });
+  app.use(express.static(__dirname + "/public"));
+
+//LOGOUT
+app.post('/logout', (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      console.log(err);
+     } else {
+      res.redirect('/');
+    }
   });
-
-  //logout2
-    app.get('/logout2', (req,res) => { 
-        req.session.destroy((err) => {
-            if (err) {
-                console.log(err);
-            } else {
-                res.redirect('/');
-            }
-        });
-    });
-  
-
-
-app.get('/cat/:id', (req,res) => {
-
-    var cat = req.params.id;
-
-    if (cat == 1) {
-        res.send("Fluffy: <img src='/fluffy.gif' style='width:250px;'>");
-    }
-    else if (cat == 2) {
-        res.send("Socks: <img src='/socks.gif' style='width:250px;'>");
-    }
-    else {
-        res.send("Invalid cat id: "+cat);
-    }
 });
-
-
-app.use(express.static(__dirname + "/public"));
 
 app.get("*", (req,res) => {
 	res.status(404);
