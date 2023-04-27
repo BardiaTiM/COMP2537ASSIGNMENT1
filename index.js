@@ -163,54 +163,63 @@ app.get('/signup', (req, res) => {
 
 
 //LOG IN 
-app.get('/login', (req,res) => {
-    var html = `
-    log in
-    <form action='/loggingin' method='post'>
-    <input name='email' type='text' placeholder='email'><br>
-    <input name='password' type='password' placeholder='password'><br>
-    <button>Submit</button>
-    </form>
-    `;
-    res.send(html);
-});
-
 app.post('/loggingin', async (req,res) => {
-    var email = req.body.email;
-    var password = req.body.password;
+  var email = req.body.email;
+  var password = req.body.password;
 
-	const schema = Joi.string().max(20).required();
-	const validationResult = schema.validate(email);
-	if (validationResult.error != null) {
-	   console.log(validationResult.error);
-	   res.redirect("/login");
-	   return;
-	}
+  const schema = Joi.string().max(20).required();
+  const validationResult = schema.validate(email);
+  if (validationResult.error != null) {
+     console.log(validationResult.error);
+     res.redirect("/login?error=true");
+     return;
+  }
 
-	const result = await userCollection.find({email: email}).project({email: 1, password: 1, name: 1}).toArray();
+  const result = await userCollection.find({email: email}).project({email: 1, password: 1, name: 1}).toArray();
 
-	console.log(result);
-	if (result.length != 1) {
-		console.log("user not found");
-		res.redirect("/login");
-		return;
-	}
-	if (await bcrypt.compare(password, result[0].password)) {
-		console.log("correct password");
-		req.session.authenticated = true;
-		req.session.email = email;
-    req.session.name = result[0].name;
-		req.session.cookie.maxAge = expireTime;
+  console.log(result);
+  if (result.length != 1) {
+      console.log("user not found");
+      res.redirect("/login");
+      return;
+  }
+  if (await bcrypt.compare(password, result[0].password)) {
+      console.log("correct password");
+      req.session.authenticated = true;
+      req.session.email = email;
+      req.session.name = result[0].name;
+      req.session.cookie.maxAge = expireTime;
 
-		res.redirect('/members');
-		return;
-	}
-	else {
-		console.log("incorrect password");
-		res.redirect("/login");
-		return; 
-	}
+      res.redirect('/members');
+      return;
+  }
+  else {
+      console.log("incorrect password");
+      var html = `log in
+          <form action='/loggingin' method='post'>
+          <input name='email' type='text' placeholder='email' value='${email}'><br>
+          <input name='password' type='password' placeholder='password'><br>
+          <p style="color:red">Password is incorrect</p>
+          <button>Submit</button>
+          </form>
+      `;
+      res.send(html);
+  }
 });
+
+app.get('/login', (req,res) => {
+  var html = `
+  log in
+  <form action='/loggingin' method='post'>
+  <input name='email' type='text' placeholder='email' ${req.query.email ? `value='${req.query.email}'` : ''}><br>
+  <input name='password' type='password' placeholder='password'><br>
+  ${req.query.error ? '<p style="color:red">Invalid email address</p>' : ''}
+  <button>Submit</button>
+  </form>
+  `;
+  res.send(html);
+});
+
 
 
 //MEMBERS
