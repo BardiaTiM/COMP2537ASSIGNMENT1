@@ -154,6 +154,10 @@ app.get('/signup', (req, res) => {
     await userCollection.insertOne({name: name, email: email, password: hashedPassword});
     console.log("Inserted user");
 
+    req.session.authenticated = true;
+    req.session.email = email;
+    req.session.name = name;
+    req.session.cookie.maxAge = expireTime;
     res.redirect('/members');
 });
 
