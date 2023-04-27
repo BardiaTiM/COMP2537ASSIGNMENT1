@@ -78,7 +78,9 @@ app.get('/', (req, res) => {
       var html = `
         Hello, ${name}! <br\>
         <button onclick="window.location.href='/members'">Go to Members Area</button><br>
-        <button onclick="window.location.href='/logout'">Logout</button>
+        <form action="/logout" method="post">
+        <button type="submit">Logout</button>
+        </form>
       `;
       res.send(html);
     } else {
